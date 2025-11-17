@@ -1,0 +1,36 @@
+@startuml
+
+' 2020. 6.23 - LSH
+' PlantUML 로 회선체크 흐름도를 그림으로(코드)만들어 봄
+' UML 명령어 newpage 가 안먹혀서 API 별로 한페이지씩 잘라서 
+' https://www.planttext.com
+' 위 URL 에 코드를 붙여넣고 실행하면 UML 이 그려진다.
+'--------------------------------------------------------------------
+' 서버 추가 : /server
+'-------------------------------------------------------------------
+
+title 회선 체크 Agent  \n
+participant Postgresql
+participant LineStatus_Agent
+participant OLT
+participant orch_M
+
+autonumber
+
+Postgresql <-[#blue] LineStatus_Agent : 회선정보를 일괄 가져온다.
+
+note left : DB SELECT
+' note right : 
+
+LineStatus_Agent [#blue]-> OLT : 현재 회선 값 조회
+note left : SNMP
+
+LineStatus_Agent -> orch_M : "<font color=red><b> 장애발생 알람, RestAPI"
+note left : 회선 Down
+
+
+Postgresql <-[#blue] LineStatus_Agent : 회선 상태 DB 저장
+note left : DB INSERT
+
+@enduml
+

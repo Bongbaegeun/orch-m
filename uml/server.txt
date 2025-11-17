@@ -1,0 +1,35 @@
+@startuml
+
+' 2019. 3.15 - LSH
+' PlantUML 로 API 흐름도를 그림으로(코드)만들어 봄
+' UML 명령어 newpage 가 안먹혀서 API 별로 한페이지씩 잘라서 
+' https://www.planttext.com
+' 위 URL 에 코드를 붙여넣고 실행하면 UML 이 그려진다.
+'--------------------------------------------------------------------
+' 서버 추가 : /server
+'-------------------------------------------------------------------
+
+title 감시대상 Onebox를 추가한다. \n
+participant orch_F
+participant orch_M
+participant Zabbix
+participant Onebox #skyblue
+
+autonumber
+
+group Onetouch 순서
+
+
+orch_F -> orch_M : /server
+note left : Onebox 모니터링 요청
+note right : DB 에 등록 
+
+orch_M -> Zabbix : Zabbix 에 등록 요청
+note right : 호스트에 Onebox ID 추가
+
+orch_M -> Onebox : send_plugin
+note right : plugin 파일 전송,\n설정파일 전송 
+
+end
+@enduml
+

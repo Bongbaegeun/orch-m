@@ -1,0 +1,24 @@
+@startuml
+
+' 2021. 1.19 - LSH
+' PlantUML 로 Ping.sh 동작을 함 
+' https://www.planttext.com
+' 위 URL 에 코드를 붙여넣고 실행하면 UML 이 그려진다.
+' VS Code 에서는 Alt + D 를 누름.
+'--------------------------------------------------------------------
+
+title OneBox RTT 모니터링 \n
+
+' autonumber
+
+group Zabbix Plugin
+
+OneBox -> "KT DNS" : 168.126.63.1
+
+OneBox -> "Zabbix Server" : Value
+note right : DB
+
+
+end
+
+@enduml

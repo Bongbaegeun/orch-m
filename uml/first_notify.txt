@@ -1,0 +1,39 @@
+@startuml
+
+' 2019. 3.15 - LSH
+' PlantUML 로 API 흐름도를 그림으로(코드)만들어 봄
+' UML 명령어 newpage 가 안먹혀서 API 별로 한페이지씩 잘라서 
+' https://www.planttext.com
+' 위 URL 에 코드를 붙여넣고 실행하면 UML 이 그려진다.
+'--------------------------------------------------------------------
+' First_Notify : /oba/first_notify
+'-------------------------------------------------------------------
+
+title Onebox-Agent 재기동시 First_Notify \n
+
+participant Orch_F order 10
+participant Orch_M order 20
+participant Onebox order 30 #skyblue
+
+autonumber
+
+group First Notify 순서
+
+Onebox -> Orch_F  : FirstNotify = True 
+note right : Onebox-Agent\n재기동
+
+Orch_F -> Orch_M  : /oba/first_notify 
+
+Orch_M -> Onebox : /zba/status/mon_file 
+note right : plugin_check
+
+Onebox -> Orch_M : Respone
+note right : (예) 9, 10, 11
+
+Orch_M -> Onebox : send_plugin
+note right : 누락된 플러그인 전송
+
+end
+
+
+@enduml

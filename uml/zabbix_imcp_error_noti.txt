@@ -1,0 +1,87 @@
+@startuml
+
+' 2021. 5.30 - LSH
+' PlantUML 로 Zabbix ICMP Error 
+' https://www.planttext.com
+' 위 URL 에 코드를 붙여넣고 실행하면 UML 이 그려진다.
+' VS Code 에서는 Alt + D 를 누름.
+'--------------------------------------------------------------------
+
+title Zabbix ICMP Error Noti \n
+
+participant Zabbix_Server
+participant Fortinet
+
+' autonumber
+
+group 예시 1 - 정상
+
+Zabbix_Server -> Fortinet : icmp Check
+note left : 30초 마다 icmp Check
+Zabbix_Server -> Fortinet : 1초, Count 1
+note right : Up
+Zabbix_Server -> Fortinet : 1초, Count 2
+note right : Up
+Zabbix_Server -> Fortinet : 1초, Count 3
+note right : Up
+
+Zabbix_Server -> Fortinet : icmp Check
+note left : 30초 마다 icmp Check
+Zabbix_Server -> Fortinet : 1초, Count 1
+note right : Up
+Zabbix_Server -> Fortinet : 1초, Count 2
+note right : Up
+Zabbix_Server -> Fortinet : 1초, Count 3
+note right : Up
+
+Zabbix_Server -> Fortinet : icmp Check
+note left : 30초 마다 icmp Check
+Zabbix_Server -> Fortinet : 1초, Count 1
+note right : Down
+Zabbix_Server -> Fortinet : 1초, Count 2
+note right : Down
+Zabbix_Server -> Fortinet : 1초, Count 3
+note right : Up
+
+end
+
+
+group 예시 2 - 장애
+
+Zabbix_Server -> Fortinet : icmp Check
+note left : 30초 마다 icmp Check
+Zabbix_Server -> Fortinet : 1초, Count 1
+note right : Up
+Zabbix_Server -> Fortinet : 1초, Count 2
+note right : Up
+Zabbix_Server -> Fortinet : 1초, Count 3
+note right : Down
+
+Zabbix_Server -> Fortinet : icmp Check
+note left : 30초 마다 icmp Check
+Zabbix_Server -> Fortinet : 1초, Count 1
+note right : Down
+Zabbix_Server -> Fortinet : 1초, Count 2
+note right : Down
+Zabbix_Server -> Fortinet : 1초, Count 3
+note right : Down
+Zabbix_Server -> Fortinet : icmp Check
+note left : 30초 마다 icmp Check
+Zabbix_Server -> Fortinet : 1초, Count 1
+note right : Down
+Zabbix_Server -> Fortinet : 1초, Count 2
+note right : Down
+Zabbix_Server -> Fortinet : 1초, Count 3
+note right : Down
+Zabbix_Server -> Fortinet : icmp Check
+note left : 30초 마다 icmp Check
+Zabbix_Server -> Fortinet : 1초, Count 1
+note right : Down
+Zabbix_Server -> Fortinet : 1초, Count 2
+note right : Down
+Zabbix_Server -> Fortinet : 1초, Count 3
+note left : 장애 발생 !!!
+note right : Down
+end
+@enduml
+

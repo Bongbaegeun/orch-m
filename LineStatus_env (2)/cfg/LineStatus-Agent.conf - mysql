@@ -1,0 +1,14 @@
+#### DB
+# db_type : [ postgresql | mysql ]
+db_type: mysql
+db_name: orch_v1
+db_user: onebox
+db_passwd: 8rzb0yBvKIeCDstTkCR3Rk1jwSxU1ia8t6CiEqj2dA/GSsQnrr5H7OHqn5QcPScz
+db_addr: TESTSERVER
+db_port: 3306
+multiprocess: 10
+repeat_cycle: 180
+
+## aes
+orchm_salt : 6F6E65626F783132333440
+orchm_code : 646964636A7335636D644B5421

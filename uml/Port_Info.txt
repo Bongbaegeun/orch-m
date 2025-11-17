@@ -1,0 +1,66 @@
+@startuml
+
+' 2021. 1.19 - LSH
+' PlantUML 로 원박스 사용 Port 를 정리 함 
+' https://www.planttext.com
+' 위 URL 에 코드를 붙여넣고 실행하면 UML 이 그려진다.
+' VS Code 에서는 Alt + D 를 누름.
+'--------------------------------------------------------------------
+' 서버 추가 : /server
+'-------------------------------------------------------------------
+
+title OneBox 사용 포트 정보 \n
+
+participant Zabbix_Server
+participant OneBox
+
+' autonumber
+
+group Zabbix Port
+
+OneBox -> Zabbix_Server : 10051
+note right : Zabbix_Agent\n모니터링 정보
+
+Zabbix_Server -> OneBox : 10050
+note left : ZBA Connection
+note right : Up / Down
+
+Zabbix_Server -> OneBox : ping ( ICMP )
+note left : SVR Connection
+note right : Up / Down
+
+end
+
+
+participant Orch_M
+participant Orch_F
+participant OneBox
+
+group Orch Port
+
+Orch_F -> OneBox : 5556
+note left : Orch_F\nAPI Call
+note right : OneBox
+
+
+OneBox -> Orch_F : 9090
+note left : Orch_F
+note right : OneBox\nStatus Info
+
+
+Orch_M -> OneBox : 5556
+note left : Orch_M\nSend Plugin
+note right : OneBox
+
+
+Orch_F -> Orch_M : 5555
+note left : Orch_M
+note right : Orch_F\nAPI Call
+
+
+end
+
+
+
+@enduml
+
