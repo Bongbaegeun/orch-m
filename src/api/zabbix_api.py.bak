@@ -1,0 +1,196 @@
+# -*- coding: utf-8 -*-
+import sys, os
+import logging
+from pyzabbix import ZabbixAPI
+
+# ZABBIX_SERVER = 'http://211.47.31.156/zabbix'
+# ZABBIX_USER = 'Admin'
+# ZABBIX_PASSWORD = 'onebox2016!'
+
+# stream = logging.StreamHandler(sys.stdout)
+# stream.setLevel(logging.DEBUG)
+#
+# log = logging.getLogger('pyzabbix1')
+# logger.addHandler(stream)
+# logger.setLevel(logging.DEBUG)
+
+def ping_check ( hostname ) :
+    response = os.system("ping -n 1 " + hostname)
+    return response if response == 0 else False
+
+def get_hostid (zapi, hostname):
+    # Host 있냐?
+    ret = zapi.host.exists( host=hostname )
+    if ret :
+        host = zapi.host.get( filter={'host': '%s' % hostname} )
+        return host[0]['hostid']
+    else :
+        return 0
+
+def get_hostinterfaceid (zapi, hostname):
+    # Host 있냐?
+    ret = zapi.host.exists( host=hostname )
+    if ret :
+        host = zapi.host.get( filter={'host': '%s' % hostname} )
+        hostinterface = zapi.hostinterface.get( hostids = host[0]['hostid'] )
+        return hostinterface
+    else :
+        return 0
+
+def create_host (hostname, group_name, template_name, snmp_ip, snmp_port, snmp_community, cfg, logger):
+
+    ZABBIX_SERVER = cfg['zb_ip']
+    ZABBIX_USER = cfg['zb_id']
+    ZABBIX_PASSWORD = cfg['zb_password']
+
+    zapi = ZabbixAPI(ZABBIX_SERVER)
+    zapi.login(ZABBIX_USER, ZABBIX_PASSWORD)
+    logger.info ( "create_host - Connected to Zabbix API Version %s" % zapi.api_version() )
+
+    # 중복방지, Host 있냐?
+    ret = zapi.host.exists( host=hostname )
+    if ret :
+        logger.error ('Host %s does not exist' % hostname)
+        exit()
+
+    # Group 있냐?, 없으면 생성
+    ret = zapi.hostgroup.exists( name=group_name )
+    if ret == False :
+        ret = zapi.hostgroup.create( name=group_name )
+        groupid = ret['groupids'][0]
+        logger.info('Group %s created' % groupid)
+    else :    
+        ret = zapi.hostgroup.get(filter={'name': '%s' % group_name})
+        groupid = ret[0]['groupid']
+        
+    logger.info ( "Group ID: %s" % groupid )
+    
+    
+    ret = zapi.template.get(filter={'name': '%s' % template_name})
+    templateid = ret[0]['templateid']
+    logger.info ( "Template ID: %s" % templateid )
+    
+    ret = zapi.host.create( host=hostname,
+        status= 1,
+        interfaces=[{
+            "type": 2,
+            "main": 1,
+            "useip": 1,
+            "ip": snmp_ip,
+            "dns": "",
+            "port": snmp_port,
+            "bulk" : 0
+        }],
+        groups=[{
+            "groupid": groupid
+        }],
+        templates=[{
+            "templateid": templateid
+        }]
+    )    
+
+    # SNMP_COMMUNITY 는 zabbix 2.4 에서 설정이 안되어, USER_MACRO 에 등록해서 사용한다.            
+    ret = zapi.usermacro.create( hostid=ret['hostids'][0], macro = '{$SNMP_COMMUNITY}', value = snmp_community )
+    logger.info(ret)
+
+
+# Host 모니터 활성화, 비활성화
+def set_monitor (hostname, status, cfg, logger):
+    ZABBIX_SERVER = cfg['zb_ip']
+    ZABBIX_USER = cfg['zb_id']
+    ZABBIX_PASSWORD = cfg['zb_password']
+
+    zapi = ZabbixAPI(ZABBIX_SERVER)
+    zapi.login(ZABBIX_USER, ZABBIX_PASSWORD)
+    logger.info ( "set_monitor - Connected to Zabbix API Version %s" % zapi.api_version() )
+
+    hostid = get_hostid(zapi, hostname)
+    
+    if hostid != 0 :
+        ret = zapi.host.update( hostid=hostid, status=status)  # 0: enabled, 1: disabled
+        logger.info ( "set_monitor - Host %s status changed to %s" % (hostname, status) )
+        return True
+    else :
+        logger.error ('set_monitor - Host %s does not exist' % hostname)
+        return False
+
+# def update_macro (hostname, snmp_community):
+#     zapi = ZabbixAPI(ZABBIX_SERVER)
+#     zapi.login(ZABBIX_USER, ZABBIX_PASSWORD)
+
+#     hostid = get_hostid(zapi, hostname)
+
+#     if hostid != 0 :
+#         ret = zapi.host.update( hostid=hostid, macro = '{$SNMP_COMMUNITY}', value = snmp_community )
+#         logger.info ( "update_macro - Host %s snmp_community to %s" % (hostname, snmp_community) )
+#         return True
+#     else :
+#         logger.error ('update_macro - Host %s snmp_community change fail' % hostname)
+#         return False
+
+
+def update_host (hostname, snmp_ip, snmp_port, snmp_community, cfg, logger):
+    ZABBIX_SERVER = cfg['zb_ip']
+    ZABBIX_USER = cfg['zb_id']
+    ZABBIX_PASSWORD = cfg['zb_password']
+
+    zapi = ZabbixAPI(ZABBIX_SERVER)
+    zapi.login(ZABBIX_USER, ZABBIX_PASSWORD)
+    logger.info ( "Connected to Zabbix API Version %s, modify_snmp_host" % zapi.api_version() )
+
+    interface = get_hostinterfaceid(zapi, hostname)
+    if interface != 0 :
+        ret = zapi.hostinterface.update( interfaceid=interface[0]['interfaceid'], ip = snmp_ip, port = snmp_port )
+        logger.info ( "update_host - Host %s snmp_ip to %s, snmp_port to %s" % (hostname, snmp_ip, snmp_port) )        
+    else : 
+        logger.error ('update_macro - Host %s fail' % hostname)
+        return False
+
+    # MACRO 변경
+    hostid = get_hostid(zapi, hostname)
+    if hostid != 0 :
+        ret = zapi.host.update( hostid=hostid, macros = [ { "macro" : "{$SNMP_COMMUNITY}", "value" : snmp_community}] )
+        logger.info ( "update_macro - Host %s snmp_community change to %s" % (hostname, snmp_community) )
+    else :
+        logger.error ('update_macro - Host %s snmp_community change fail' % hostname)
+        return False
+    
+    return True
+
+def delete_host (hostname, cfg, logger):
+    ZABBIX_SERVER = cfg['zb_ip']
+    ZABBIX_USER = cfg['zb_id']
+    ZABBIX_PASSWORD = cfg['zb_password']
+    
+    zapi = ZabbixAPI(ZABBIX_SERVER)
+    zapi.login(ZABBIX_USER, ZABBIX_PASSWORD)
+    logger.info ( "Connected to Zabbix API Version %s, modify_snmp_host" % zapi.api_version() )
+
+    hostid = get_hostid(zapi, hostname)
+    if hostid != 0 :
+        ret = zapi.host.delete( hostid )
+        logger.info ( "delete_host - Host %s deleted %s" % (hostname, snmp_community) )
+    else :
+        logger.error ('delete_host - Host %s fail to delete' % hostname)
+        return False
+    
+    return True
+  
+    
+# if __name__ == '__main__':
+#     hostname = 'test14'
+#     group_name = 'fotinet'
+#     template_name = 'insoft - Template ICMP Ping'
+    
+#     snmp_ip = '8.8.8.7'
+#     snmp_port = '162'
+#     snmp_community = 'public11'
+    
+#     # set_monitor (hostname, 0)
+#     # update_macro(hostname, 'public1')
+#     # update_host(hostname, snmp_ip, snmp_port, snmp_community)
+    
+#     delete_host(hostname)
+    
+    
+    # create_snmp_host(hostname, group_name, template_name, snmp_ip, snmp_port, snmp_community)  
